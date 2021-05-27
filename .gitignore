@@ -1,0 +1,6 @@
+*.exe
+*.xml
+.idea
+__pycache__
+*.pyc
+*.uml
