@@ -66,6 +66,8 @@ def get_menu(val):
     cur = {'details': None}
     count_param = 0
 
+    print(menu_list)
+
     for cmt in menu_list:
         if cmt == "MENU":
             continue
@@ -81,6 +83,7 @@ def get_menu(val):
             count_param += 1
             if count_param == 2:
                 res['data'].append(cur)
+                cur = {'details': None}
                 count_param = 0
 
     return res
