@@ -10,9 +10,13 @@ session = HTMLSession()
 text_re = r"jsonData = (.*);"
 regex = r"initData = (.*);"
 
+options = wb.ChromeOptions()
+options.add_argument('--headless')
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-dev-shm-usage')
 
 def crawl_cmt(link, driver_path):
-    driver = wb.Chrome(executable_path=os.path.join(driver_path, 'chromedriver.exe'))
+    driver = wb.Chrome('chromedriver', options=options)
     driver.get(link)
     while True:
         try:
@@ -33,7 +37,7 @@ def crawl_cmt(link, driver_path):
 
 
 def get_full_menu(store_link, driver_path):
-    driver1 = wb.Chrome(executable_path=os.path.join(driver_path, 'chromedriver.exe'))
+    driver1 = wb.Chrome('chromedriver', options=options)
     driver1.get(store_link)
     sleep(10)
     menu_data = driver1.find_elements_by_xpath('/html/body/div[1]/div/div[5]/div[1]/div[2]/div/div[2]')
@@ -212,13 +216,3 @@ def crawl(load_data_path: str, save_data_path: str, driver_path: str, limit: int
             os.mkdir(save_data_path + "/" + filename)
         current_save_data_path = save_data_path + "/" + filename
         crawl_data_from(load_data_path + "/" + name, current_save_data_path, driver_path, limit)
-
-if __name__ == "__main__":
-    driver_path = r'D:/Web/FoodBot/chromedriver.exe'
-    load_data_path = r'D:/Web/FoodBot/linkstore'
-    save_data_path = r'D:/Web/FoodBot/save'
-
-    print("Load data from: {}\nSave data from: {}\nDriver path: {}".format(load_data_path, save_data_path, driver_path))
-    crawl(load_data_path, save_data_path, driver_path, 10)
-    
-
