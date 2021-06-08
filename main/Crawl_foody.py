@@ -1,5 +1,6 @@
 import json
 import re
+import os
 from time import sleep
 
 from requests_html import HTMLSession
@@ -10,8 +11,8 @@ text_re = r"jsonData = (.*);"
 regex = r"initData = (.*);"
 
 
-def crawl_cmt(link):
-    driver = wb.Chrome(executable_path='chromedriver.exe')
+def crawl_cmt(link, driver_path):
+    driver = wb.Chrome(executable_path=os.path.join(driver_path, 'chromedriver.exe'))
     driver.get(link)
     while True:
         try:
@@ -31,8 +32,8 @@ def crawl_cmt(link):
     return full_cmt_by_text
 
 
-def get_full_menu(store_link):
-    driver1 = wb.Chrome(executable_path='chromedriver.exe')
+def get_full_menu(store_link, driver_path):
+    driver1 = wb.Chrome(executable_path=os.path.join(driver_path, 'chromedriver.exe'))
     driver1.get(store_link)
     sleep(10)
     menu_data = driver1.find_elements_by_xpath('/html/body/div[1]/div/div[5]/div[1]/div[2]/div/div[2]')
@@ -130,11 +131,11 @@ def get_cmt(val):
     return res
 
 
-def get_full_information(store_link):
+def get_full_information(store_link, driver_path):
     link_foody_store = 'https://www.foody.vn{}'.format(store_link)
     link_menu = 'https://www.now.vn{}'.format(store_link)
-    cmt = crawl_cmt(link_foody_store)
-    menu = get_full_menu(link_menu)
+    cmt = crawl_cmt(link_foody_store, driver_path)
+    menu = get_full_menu(link_menu, driver_path)
     rb = session.get(link_foody_store)
     store_inf_text_link: str = rb.text
     # print(text_re.match(text_str))
@@ -175,23 +176,49 @@ def get_full_information(store_link):
     return information
 
 
-link_store = [
-    'link_store_bún',
-    'link_store_cơm',
-    'link_store_phở',
-]
-if __name__ == '__main__':
-    with open('link_store_bun.txt', 'r', encoding='utf-8') as f:
+def crawl_data_from(data_link: str, dest_link: str, driver_path: str, limit: int=500):
+    print("Crawl Data from {}, save to {}, limit by {}".format(data_link, dest_link, limit))
+    with open(data_link, 'r', encoding='utf-8') as f:
         cnt = 0
         for line in f:
+            print("Name {}".format(line))
             line = line.strip('\n')
             diner_name = line.split("/")[-1]
+
+            value = get_full_information(line, driver_path)
+            file = open(dest_link + "/" + diner_name + ".json", "w", encoding="utf-8")
             try:
-                value = get_full_information(line)
-                file = open(diner_name + ".json", "w", encoding="utf-8")
-                try:
-                    json.dump(value, file, ensure_ascii=False, indent=4)
-                except IOError:
-                    print("vkl")
-            except:
-                continue
+                json.dump(value, file, ensure_ascii=False, indent=4)
+                cnt += 1
+                if cnt >= limit:
+                    break
+            except IOError:
+                print("Some error occur at " + diner_name)
+
+
+def crawl(load_data_path: str, save_data_path: str, driver_path: str, limit: int):
+    if os.path.exists(driver_path) == False:
+        raise Exception("Driver path not found")
+    if os.path.exists(load_data_path) == False:
+        raise Exception("Data path not found")
+    if os.path.exists(save_data_path) == False:
+        os.mkdir(save_data_path)
+
+    slist = os.listdir(load_data_path)
+
+    for name in slist:
+        filename, ext = os.path.splitext(name)
+        if os.path.exists(save_data_path + "/" + filename) == False:
+            os.mkdir(save_data_path + "/" + filename)
+        current_save_data_path = save_data_path + "/" + filename
+        crawl_data_from(load_data_path + "/" + name, current_save_data_path, driver_path, limit)
+
+if __name__ == "__main__":
+    driver_path = r'D:/Web/FoodBot/chromedriver.exe'
+    load_data_path = r'D:/Web/FoodBot/linkstore'
+    save_data_path = r'D:/Web/FoodBot/save'
+
+    print("Load data from: {}\nSave data from: {}\nDriver path: {}".format(load_data_path, save_data_path, driver_path))
+    crawl(load_data_path, save_data_path, driver_path, 10)
+    
+
