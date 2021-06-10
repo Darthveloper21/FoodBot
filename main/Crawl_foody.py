@@ -74,8 +74,6 @@ def get_menu(val):
     cur = {'details': None}
     count_param = 0
 
-    print(menu_list)
-
     for cmt in menu_list:
         if count_param == 0:
             if cmt.startswith("+"):
@@ -213,7 +211,6 @@ def crawl_data_from(data_link: str, dest_link: str, driver_path: str, limit: int
             elif cnt >= limit:
                 break
 
-            print("Name {}".format(line))
             line = line.strip('\n')
             diner_name = line.split("/")[-1]
 
@@ -241,9 +238,9 @@ def crawl(load_data_path: str, save_data_path: str, driver_path: str, limit: int
 
     for name in slist:
         filename, ext = os.path.splitext(name)
-        if os.path.exists(save_data_path + "/" + filename) == False:
-            os.mkdir(save_data_path + "/" + filename)
-        current_save_data_path = save_data_path + "/" + filename
+        if os.path.exists(save_data_path + "/" + filename + "_{}".format(str(id))) == False:
+            os.mkdir(save_data_path + "/" + filename + "_{}".format(str(id)))
+        current_save_data_path = save_data_path + "/" + filename + "_{}".format(str(id))
         crawl_data_from(load_data_path + "/" + name, current_save_data_path, driver_path, limit=limit, id=id)
 
 def craw_in_range(load_data_path: str, save_data_path: str, driver_path: str, limit: int, l: int = 0, r: int = 100):
