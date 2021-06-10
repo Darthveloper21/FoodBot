@@ -245,3 +245,9 @@ def crawl(load_data_path: str, save_data_path: str, driver_path: str, limit: int
             os.mkdir(save_data_path + "/" + filename)
         current_save_data_path = save_data_path + "/" + filename
         crawl_data_from(load_data_path + "/" + name, current_save_data_path, driver_path, limit=limit, id=id)
+
+def craw_in_range(load_data_path: str, save_data_path: str, driver_path: str, limit: int, l: int = 0, r: int = 100):
+    for i in range(l, r+1):
+        print("Start crawl at epoch {}".format(str(i)))
+        crawl(load_data_path, save_data_path, driver_path, limit, i)
+        print("Complete crawl at epoch {}".format(str(i)))

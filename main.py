@@ -1,4 +1,4 @@
 from main.Crawl_foody import *
 import os
 
-crawl("linkstore", "save", "chromedriver.exe", 2, 100)
+craw_in_range("linkstore", "save", "chromedriver.exe", 100, 0, 1)
