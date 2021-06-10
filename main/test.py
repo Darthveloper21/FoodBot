@@ -48,4 +48,48 @@ def get_full_menu(store_link):
     return menu
 
 
-print(get_full_menu('https://www.now.vn/ha-noi/o-ga-com-ga-de-nhat'))
+"""
+    Function name: Get_menu
+    :param val: Str
+    :return:  res: dict
+    Format: {"data": [<sub_format>]}
+    Sub_format:
+        name: Str: dish's name
+        price: Str: dish's price
+        details: Str: additional information about dishes
+    """
+
+def get_menu(val):
+    menu_list = str.split(val, '\n')
+    res = {'data': []}
+    cur = {'details': None}
+    count_param = 0
+
+    print(menu_list)
+
+    for cmt in menu_list:
+        if count_param == 0:
+            if cmt.startswith("+"):
+                cur['name'] = cmt[1:]
+                count_param += 1
+            elif cmt.startswith("Hết hàng"):
+                cur['name'] = cmt[8:]
+                count_param += 1
+            elif count_param == 0:
+                cur['name'] = cmt
+                count_param += 1
+        elif count_param > 0:
+            if '0' <= cmt[0] <= '9' and cmt[-1] == 'đ':
+                cmt = cmt.replace(',', '')
+                cur['price'] = cmt
+                res['data'].append(cur)
+                cur = {'details': None}
+                count_param = 0
+            else:
+                cur['details'] = cmt
+
+    return res
+
+
+
+#print(get_menu(get_full_menu('https://www.now.vn/ha-noi/o-ga-com-ga-de-nhat')))
