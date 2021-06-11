@@ -1,2 +1,2 @@
 # FoodBot
- Chatbot find restaurent
+ Chatbot find restaurant
