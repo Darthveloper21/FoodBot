@@ -11,12 +11,9 @@ text_re = r"jsonData = (.*);"
 regex = r"initData = (.*);"
 
 options = wb.ChromeOptions()
-options.add_argument('--headless')
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-dev-shm-usage')
 
 def crawl_cmt(link, driver_path):
-    driver = wb.Chrome('chromedriver', options=options)
+    driver = wb.Chrome(executable_path=driver_path, options=options)
     driver.get(link)
     while True:
         try:
@@ -37,10 +34,21 @@ def crawl_cmt(link, driver_path):
 
 
 def get_full_menu(store_link, driver_path):
-    driver1 = wb.Chrome('chromedriver', options=options)
+    driver1 = wb.Chrome(executable_path=driver_path, options=options)
+
+    driver1.get('chrome://settings/')
+    driver1.execute_script('chrome.settingsPrivate.setDefaultZoom(0.1);')
+    sleep(1)
     driver1.get(store_link)
-    sleep(10)
-    menu_data = driver1.find_elements_by_xpath('/html/body/div[1]/div/div[5]/div[1]/div[2]/div/div[2]')
+    sleep(1)
+
+    # change zoom for web driver
+    sleep(1)
+    driver1.execute_script("document.body.style.zoom='50%'")
+    driver1.get(store_link)
+    sleep(1)
+
+    menu_data = driver1.find_elements_by_class_name('item-restaurant-row')
     menu: str = ''
     for k in menu_data:
         menu = menu + k.text
@@ -66,27 +74,29 @@ def get_menu(val):
     cur = {'details': None}
     count_param = 0
 
-    print(menu_list)
-
     for cmt in menu_list:
-        if cmt == "MENU":
-            continue
-        elif cmt == "Giá đã bao gồm tiền hộp mang về":
-            cur['details'] = cmt
-        elif cmt.startswith("+"):
-            continue
-        else:
-            if count_param == 0:
+        if count_param == 0:
+            if cmt.startswith("+"):
+                cur['name'] = cmt[1:]
+                count_param += 1
+            elif cmt.startswith("Hết hàng"):
+                cur['name'] = cmt[8:]
+                count_param += 1
+            elif count_param == 0:
                 cur['name'] = cmt
-            elif count_param == 1:
+                count_param += 1
+        elif count_param > 0:
+            if '0' <= cmt[0] <= '9' and cmt[-1] == 'đ':
+                cmt = cmt.replace(',', '')
                 cur['price'] = cmt
-            count_param += 1
-            if count_param == 2:
                 res['data'].append(cur)
                 cur = {'details': None}
                 count_param = 0
+            else:
+                cur['details'] = cmt
 
     return res
+
 
 
 """
@@ -141,7 +151,7 @@ def get_cmt(val):
 def get_full_information(store_link, driver_path):
     link_foody_store = 'https://www.foody.vn{}'.format(store_link)
     link_menu = 'https://www.now.vn{}'.format(store_link)
-    cmt = crawl_cmt(link_foody_store, driver_path)
+    # cmt = crawl_cmt(link_foody_store, driver_path)
     menu = get_full_menu(link_menu, driver_path)
     rb = session.get(link_foody_store)
     store_inf_text_link: str = rb.text
@@ -174,7 +184,7 @@ def get_full_information(store_link, driver_path):
             'Time': time_do,
             'review_point': review_point,
             'menu': get_menu(menu),
-            'cmt': get_cmt(cmt),
+            # 'cmt': get_cmt(cmt),
             'website': link_foody_store,
         }
     except IOError:
@@ -183,27 +193,44 @@ def get_full_information(store_link, driver_path):
     return information
 
 
-def crawl_data_from(data_link: str, dest_link: str, driver_path: str, limit: int=500):
+def crawl_data_from(data_link: str, dest_link: str, driver_path: str, limit: int=500, id: int = 0):
     print("Crawl Data from {}, save to {}, limit by {}".format(data_link, dest_link, limit))
     with open(data_link, 'r', encoding='utf-8') as f:
         cnt = 0
-        for line in f:
-            print("Name {}".format(line))
+        t = f.read()
+        s = t.count('\n')
+        start = int(s/100) * id
+
+        t = t.split("\n")
+
+        for i, line in enumerate(t):
+            if i < start:
+                continue
+            elif i >= int(s/100) * (id + 1):
+                break
+            elif cnt >= limit:
+                break
+
             line = line.strip('\n')
             diner_name = line.split("/")[-1]
 
-            value = get_full_information(line, driver_path)
-            file = open(dest_link + "/" + diner_name + ".json", "w", encoding="utf-8")
             try:
-                json.dump(value, file, ensure_ascii=False, indent=4)
-                cnt += 1
-                if cnt >= limit:
-                    break
-            except IOError:
-                print("Some error occur at " + diner_name)
+                file = open(dest_link + "/" + diner_name + ".json", "w", encoding="utf-8")
+                value = get_full_information(line, driver_path)
+                try:
+                    json.dump(value, file, ensure_ascii=False, indent=4)
+                    cnt += 1
+                    if cnt >= limit:
+                        break
+                except IOError:
+                    print("Some error occur at " + diner_name)
+            except Exception as e:
+                print(str(e))
+            finally:
+                file.close()
 
 
-def crawl(load_data_path: str, save_data_path: str, driver_path: str, limit: int):
+def crawl(load_data_path: str, save_data_path: str, driver_path: str, limit: int, id: int=0):
     if os.path.exists(driver_path) == False:
         raise Exception("Driver path not found")
     if os.path.exists(load_data_path) == False:
@@ -215,7 +242,13 @@ def crawl(load_data_path: str, save_data_path: str, driver_path: str, limit: int
 
     for name in slist:
         filename, ext = os.path.splitext(name)
-        if os.path.exists(save_data_path + "/" + filename) == False:
-            os.mkdir(save_data_path + "/" + filename)
-        current_save_data_path = save_data_path + "/" + filename
-        crawl_data_from(load_data_path + "/" + name, current_save_data_path, driver_path, limit)
+        if os.path.exists(save_data_path + "/" + filename + "_{}".format(str(id))) == False:
+            os.mkdir(save_data_path + "/" + filename + "_{}".format(str(id)))
+        current_save_data_path = save_data_path + "/" + filename + "_{}".format(str(id))
+        crawl_data_from(load_data_path + "/" + name, current_save_data_path, driver_path, limit=limit, id=id)
+
+def craw_in_range(load_data_path: str, save_data_path: str, driver_path: str, limit: int, l: int = 0, r: int = 100):
+    for i in range(l, r+1):
+        print("Start crawl at epoch {}".format(str(i)))
+        crawl(load_data_path, save_data_path, driver_path, limit, i)
+        print("Complete crawl at epoch {}".format(str(i)))
