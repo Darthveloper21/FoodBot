@@ -214,16 +214,20 @@ def crawl_data_from(data_link: str, dest_link: str, driver_path: str, limit: int
             line = line.strip('\n')
             diner_name = line.split("/")[-1]
 
-            value = get_full_information(line, driver_path)
-            file = open(dest_link + "/" + diner_name + ".json", "w", encoding="utf-8")
             try:
-                json.dump(value, file, ensure_ascii=False, indent=4)
-                cnt += 1
-                if cnt >= limit:
-                    break
-            except IOError:
-                print("Some error occur at " + diner_name)
-            file.close()
+                file = open(dest_link + "/" + diner_name + ".json", "w", encoding="utf-8")
+                value = get_full_information(line, driver_path)
+                try:
+                    json.dump(value, file, ensure_ascii=False, indent=4)
+                    cnt += 1
+                    if cnt >= limit:
+                        break
+                except IOError:
+                    print("Some error occur at " + diner_name)
+            except Exception as e:
+                print(str(e))
+            finally:
+                file.close()
 
 
 def crawl(load_data_path: str, save_data_path: str, driver_path: str, limit: int, id: int=0):
