@@ -1,6 +1,7 @@
 import mysql.connector
 import os
 import json
+import re
 from datetime import datetime
 
 mydb = mysql.connector.connect(
@@ -34,19 +35,33 @@ def add_diner(name, address, city, district, price_min, price_max, website, revi
     global mydb
     global cursor
     values = [name, address, city, district, price_min, price_max, website] + prep_review(review_point)
+
+    sqlLine = 'INSERT INTO diners(name, address, city, district, priceMin, priceMax, website, ' \
+              'qualityPoint, pricePoint, servicePoint, destinationPoint, spacePoint)' \
+              'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
     print(values)
+    cursor.execute(sqlLine, values)
+    mydb.commit()
 
 
 def add_menu(name, price, diner_id, details=None):
     """
     add dished to menu table
     :param name: str dish name
-    :param price: float dish price
+    :param price: dish price
     :param diner_id: int specify which diner
     :param details: dish description
     :return: None
     """
-    pass
+    global mydb
+    global cursor
+
+    sqlLine = 'INSERT INTO menu(name, price, details, dinerID) VALUES (%s, %s, %s, %s)'
+
+    if details is None:
+        details = 'null'
+    cursor.execute(sqlLine, (name, price, details, diner_id))
+    mydb.commit()
 
 
 def get_diner_id():
@@ -56,8 +71,7 @@ def get_diner_id():
     global mydb
     global cursor
 
-    sqlLine = 'SELECT `AUTO_INCREMENT` FROM INFORMATION_SCHEMA.TABLES ' \
-              'WHERE TABLE_SCHEMA = \'FindFood\' AND TABLE_NAME = \'diners\';'
+    sqlLine = 'SELECT MAX(id) FROM diners'
 
     cursor.execute(sqlLine)
     rt = cursor.next()[0]
@@ -73,10 +87,14 @@ def prep_time(timetable: list, diner_id):
     :param diner_id: int specify which diner
     :return: None
     """
+
     for shift in timetable:
         marks = shift.split('-')
-        for mark in marks:
-            print(datetime.strptime(mark, '%H:%M').time())
+        start = datetime.strptime(marks[0], '%H:%M').time()
+        close = datetime.strptime(marks[1], '%H:%M').time()
+        sqlLine = 'INSERT INTO timetable(dinerID, time_start, time_close) VALUES(%s, %s, %s)'
+        cursor.execute(sqlLine, (diner_id, start, close))
+        mydb.commit()
 
 
 def prep_review(review_point: list):
@@ -101,6 +119,20 @@ def prep_review(review_point: list):
     return reviews
 
 
+def remove_emoji(string):
+    if string is None:
+        return None
+    emoji_pattern = re.compile("["
+                               u"\U0001F600-\U0001F64F"  # emoticons
+                               u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+                               u"\U0001F680-\U0001F6FF"  # transport & map symbols
+                               u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                               u"\U00002702-\U000027B0"
+                               u"\U000024C2-\U0001F251"
+                               "]+", flags=re.UNICODE)
+    return emoji_pattern.sub(r'', string)
+
+
 def load_in_range(food_path, left, right):
     """
     get all the data from .json files to the database
@@ -116,7 +148,6 @@ def load_in_range(food_path, left, right):
             file = open(path_tmp + '/' + f, 'r', encoding='utf8')
             data = json.load(file)
             try:
-                diner_id = get_diner_id()
                 add_diner(data['name'],
                           data['address'],
                           data['city'],
@@ -125,10 +156,19 @@ def load_in_range(food_path, left, right):
                           data['priceMax'],
                           data['website'],
                           data['review_point'])
+                diner_id = get_diner_id()
                 prep_time(data['Time'], diner_id)
+                menus = data['menu']['data']
+                for food in menus:
+                    details = remove_emoji(food['details'])
+                    print(details)
+                    add_menu(food['name'], food['price'], diner_id, details=food['details'])
             except IndexError:
                 print('no menu')
             file.close()
 
 
-load_in_range(path_bun, 31, 33)
+load_in_range(path_pho, 31, 35)
+load_in_range(path_com, 31, 35)
+load_in_range(path_pho, 31, 35)
+mydb.close()
