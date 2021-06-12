@@ -1,0 +1,41 @@
+CREATE DATABASE IF NOT EXISTS FindFood;
+
+USE FindFood;
+
+DROP TABLE IF EXISTS menus;
+DROP TABLE IF EXISTS timetable;
+DROP TABLE IF EXISTS diners;
+
+CREATE TABLE diners (
+	id INT(20) NOT NULL AUTO_INCREMENT,
+	name VARCHAR(50) NOT NULL,
+	address TEXT NOT NULL,
+	city TEXT NOT NULL,
+	district TEXT,
+	pricemin DECIMAL(12, 2) NOT NULL,
+	pricemax DECIMAL(12, 2) NOT NULL,
+	pricePoint FLOAT(5, 2),
+	qualityPoint FLOAT(5, 2),
+	destinationPoint FLOAT(5, 2),
+	servicePoint FLOAT(5, 2),
+	spacePoint FLOAT(5, 2),
+	website TEXT,
+	PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE menus (
+	foodID INT(20) NOT NULL AUTO_INCREMENT,
+	name VARCHAR(50) NOT NULL,
+	price DECIMAL(12, 2) NOT NULL,
+	details TEXT,
+	dinerID INT(20) NOT NULL,
+	PRIMARY KEY (foodID),
+	CONSTRAINT myfood FOREIGN KEY (dinerID) REFERENCES diners(id) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE timetable (
+	dinerID INT(20) NOT NULL,
+	time_start TIME NOT NULL,
+	time_end TIME NOT NULL,
+	CONSTRAINT mytime FOREIGN KEY (dinerID) REFERENCES diners(id) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
