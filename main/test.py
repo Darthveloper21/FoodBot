@@ -59,6 +59,7 @@ def get_full_menu(store_link):
         details: Str: additional information about dishes
     """
 
+
 def get_menu(val):
     menu_list = str.split(val, '\n')
     res = {'data': []}
@@ -90,6 +91,4 @@ def get_menu(val):
 
     return res
 
-
-
-#print(get_menu(get_full_menu('https://www.now.vn/ha-noi/o-ga-com-ga-de-nhat')))
+# print(get_menu(get_full_menu('https://www.now.vn/ha-noi/o-ga-com-ga-de-nhat')))

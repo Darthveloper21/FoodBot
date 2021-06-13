@@ -12,6 +12,7 @@ regex = r"initData = (.*);"
 
 options = wb.ChromeOptions()
 
+
 def crawl_cmt(link, driver_path):
     driver = wb.Chrome(executable_path=driver_path, options=options)
     driver.get(link)
@@ -20,7 +21,7 @@ def crawl_cmt(link, driver_path):
             clickObj = driver.find_elements_by_xpath(
                 '/html/body/div[2]/div[2]/div[2]/section/div/div/div/div/div[1]/div/div[2]/div[1]/div/div/a')
             clickObj[0].click()
-        except:
+        except IndexError:
             print("Load full cmt")
             break
     full_cmt = driver.find_elements_by_xpath(
@@ -96,7 +97,6 @@ def get_menu(val):
                 cur['details'] = cmt
 
     return res
-
 
 
 """
@@ -193,20 +193,20 @@ def get_full_information(store_link, driver_path):
     return information
 
 
-def crawl_data_from(data_link: str, dest_link: str, driver_path: str, limit: int=500, id: int = 0):
+def crawl_data_from(data_link: str, dest_link: str, driver_path: str, limit: int = 500, path_id: int = 0):
     print("Crawl Data from {}, save to {}, limit by {}".format(data_link, dest_link, limit))
     with open(data_link, 'r', encoding='utf-8') as f:
         cnt = 0
         t = f.read()
         s = t.count('\n')
-        start = int(s/100) * id
+        start = int(s / 100) * path_id
 
         t = t.split("\n")
 
         for i, line in enumerate(t):
             if i < start:
                 continue
-            elif i >= int(s/100) * (id + 1):
+            elif i >= int(s / 100) * (path_id + 1):
                 break
             elif cnt >= limit:
                 break
@@ -230,25 +230,25 @@ def crawl_data_from(data_link: str, dest_link: str, driver_path: str, limit: int
                 file.close()
 
 
-def crawl(load_data_path: str, save_data_path: str, driver_path: str, limit: int, id: int=0):
-    if os.path.exists(driver_path) == False:
-        raise Exception("Driver path not found")
-    if os.path.exists(load_data_path) == False:
+def crawl(load_data_path: str, save_data_path: str, driver_path: str, limit: int, path_id: int = 0):
+    if not os.path.exists(load_data_path):
         raise Exception("Data path not found")
-    if os.path.exists(save_data_path) == False:
+    if not os.path.exists(save_data_path):
         os.mkdir(save_data_path)
 
     slist = os.listdir(load_data_path)
 
     for name in slist:
         filename, ext = os.path.splitext(name)
-        if os.path.exists(save_data_path + "/" + filename + "_{}".format(str(id))) == False:
-            os.mkdir(save_data_path + "/" + filename + "_{}".format(str(id)))
-        current_save_data_path = save_data_path + "/" + filename + "_{}".format(str(id))
-        crawl_data_from(load_data_path + "/" + name, current_save_data_path, driver_path, limit=limit, id=id)
+        if not os.path.exists(save_data_path + "/" + filename + "_{}".format(str(path_id))):
+            os.mkdir(save_data_path + "/" + filename + "_{}".format(str(path_id)))
+        current_save_data_path = save_data_path + "/" + filename + "_{}".format(str(path_id))
+        crawl_data_from(load_data_path + "/" + name, current_save_data_path, driver_path, limit=limit, path_id=path_id)
 
-def craw_in_range(load_data_path: str, save_data_path: str, driver_path: str, limit: int, l: int = 0, r: int = 100):
-    for i in range(l, r+1):
+
+def craw_in_range(load_data_path: str, save_data_path: str, driver_path: str,
+                  limit: int, left: int = 0, right: int = 100):
+    for i in range(left, right + 1):
         print("Start crawl at epoch {}".format(str(i)))
         crawl(load_data_path, save_data_path, driver_path, limit, i)
         print("Complete crawl at epoch {}".format(str(i)))
