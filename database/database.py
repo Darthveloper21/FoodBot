@@ -1,3 +1,8 @@
+"""
+Load all the data from json files into database
+Set environment variables for database port (DBPort) and password (DBP) to run the code
+"""
+
 import mysql.connector
 import os
 import json
@@ -39,7 +44,7 @@ def add_diner(name, address, city, district, price_min, price_max, website, revi
     sqlLine = 'INSERT INTO diners(name, address, city, district, priceMin, priceMax, website, ' \
               'qualityPoint, pricePoint, servicePoint, destinationPoint, spacePoint)' \
               'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-    print(values)
+    # print(values)
     cursor.execute(sqlLine, values)
     mydb.commit()
 
@@ -60,6 +65,7 @@ def add_menu(name, price, diner_id, details=None):
 
     if details is None:
         details = 'null'
+    price = prep_price(price)
     cursor.execute(sqlLine, (name, price, details, diner_id))
     mydb.commit()
 
@@ -120,6 +126,7 @@ def prep_review(review_point: list):
 
 
 def remove_emoji(string):
+    """remove emoji from string"""
     if string is None:
         return None
     emoji_pattern = re.compile("["
@@ -131,6 +138,19 @@ def remove_emoji(string):
                                u"\U000024C2-\U0001F251"
                                "]+", flags=re.UNICODE)
     return emoji_pattern.sub(r'', string)
+
+
+def prep_price(price):
+    """
+    set all price to format %.2f
+    :param price: priceMin priceMax from diners, price from menu
+    :return: price with format %.2f
+    """
+    price = str(price)
+    price = price.replace('đ', '')
+    price = price.replace('.', '')
+    price = price.replace(',', '')
+    return price
 
 
 def load_in_range(food_path, left, right):
@@ -145,30 +165,35 @@ def load_in_range(food_path, left, right):
         path_tmp = food_path + str(i)
         file_list = os.listdir(path_tmp)
         for f in file_list:
-            file = open(path_tmp + '/' + f, 'r', encoding='utf8')
-            data = json.load(file)
+            path = path_tmp + '/' + f
+            file = open(path, 'r', encoding='utf8')
             try:
-                add_diner(data['name'],
-                          data['address'],
-                          data['city'],
-                          data['district'],
-                          data['priceMin'],
-                          data['priceMax'],
-                          data['website'],
-                          data['review_point'])
-                diner_id = get_diner_id()
-                prep_time(data['Time'], diner_id)
-                menus = data['menu']['data']
-                for food in menus:
-                    details = remove_emoji(food['details'])
-                    print(details)
-                    add_menu(food['name'], food['price'], diner_id, details=food['details'])
-            except IndexError:
-                print('no menu')
+                data = json.load(file)
+                try:
+                    add_diner(data['name'],
+                              data['address'],
+                              data['city'],
+                              data['district'],
+                              prep_price(data['priceMin']),
+                              prep_price(data['priceMax']),
+                              data['website'],
+                              data['review_point'])
+                    diner_id = get_diner_id()
+                    prep_time(data['Time'], diner_id)
+                    menus = data['menu']['data']
+                    for food in menus:
+                        # details = remove_emoji(food['details'])
+                        add_menu(food['name'], food['price'], diner_id, details=food['details'])
+                except IndexError:
+                    print('no menu')
+            except Exception as e:
+                print(e)
+                print(path)
+                # return  # comment this if you are too lazy to delete all the corrupted files
             file.close()
 
 
-load_in_range(path_pho, 31, 35)
-load_in_range(path_com, 31, 35)
-load_in_range(path_pho, 31, 35)
+load_in_range(path_pho, 1, 30)
+load_in_range(path_com, 1, 30)
+load_in_range(path_bun, 1, 30)
 mydb.close()
