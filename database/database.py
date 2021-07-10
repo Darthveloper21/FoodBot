@@ -148,7 +148,6 @@ def prep_price(price):
     """
     price = str(price)
     price = price.replace('đ', '')
-    price = price.replace('.', '')
     price = price.replace(',', '')
     return price
 
