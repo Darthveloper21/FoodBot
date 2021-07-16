@@ -23,6 +23,30 @@ path_bun = "../save/link_store_bún_"
 path_com = "../save/link_store_cơm_"
 path_pho = "../save/link_store_phở_"
 
+new = ['../save/link_store_bánh mì_',
+       '../save/link_store_mì ý_',
+       '../save/link_store_pizza_',
+       '../save/link_store_nộm_',
+       '../save/link_store_burger_',
+       '../save/link_store_cháo_',
+       '../save/link_store_xôi_',
+       '../save/link_store_bánh cuốn_',
+       '../save/link_store_nem chua_',
+       '../save/link_store_gà_',
+       '../save/link_store_vịt_',
+       '../save/link_store_salad_',
+       '../save/link_store_bít tết_',
+       '../save/link_store_chả cá_',
+       '../save/link_store_trà_',
+       '../save/link_store_sữa chua_',
+       '../save/link_store_cafe_',
+       '../save/link_store_bia_',
+       '../save/link_store_rượu_',
+       '../save/link_store_kem_',
+       '../save/link_store_bánh bao_',
+       '../save/link_store_xúc xích_',
+       '../save/link_store_bánh ngọt_']
+
 
 def add_diner(name, address, city, district, price_min, price_max, website, review_point):
     """
@@ -179,10 +203,10 @@ def load_in_range(food_path, left, right):
                               data['review_point'])
                     diner_id = get_diner_id()
                     prep_time(data['Time'], diner_id)
-                    menus = data['menu']['data']
-                    for food in menus:
-                        # details = remove_emoji(food['details'])
-                        add_menu(food['name'], food['price'], diner_id, details=food['details'])
+                    # menus = data['menu']['data']
+                    # for food in menus:
+                    #     # details = remove_emoji(food['details'])
+                    #     add_menu(food['name'], food['price'], diner_id, details=food['details'])
                 except IndexError:
                     print('no menu')
             except Exception as e:
@@ -192,7 +216,11 @@ def load_in_range(food_path, left, right):
             file.close()
 
 
-load_in_range(path_pho, 1, 30)
-load_in_range(path_com, 1, 30)
-load_in_range(path_bun, 1, 30)
+# load_in_range(path_pho, 1, 30)
+# load_in_range(path_com, 1, 30)
+# load_in_range(path_bun, 1, 30)
+
+for x in new:
+    load_in_range(x, 0, 100)
+
 mydb.close()
